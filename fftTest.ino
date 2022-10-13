@@ -1,3 +1,5 @@
+#include "MIDIUSB.h"
+
 int adcReadAvg(int port, int nAvg);
 int lookupFret(int adcVal);
 int lookupNote(int str, int fret);
@@ -11,6 +13,7 @@ int strEe = A5;
                     
 int adcVal = 0;  
 int fret = 0;
+int notes[6] = {};    //MIDI notes associated with each string's current fret value
 
 void setup() {
   Serial.begin(9600);       
@@ -19,7 +22,7 @@ void setup() {
 
 void loop() {
   int strings[6] = {};  //E A D G B e
-  int notes[6] = {};    //MIDI notes associated with each string's current fret value
+  int newNotes[6] = {};    //MIDI notes associated with each string's current fret value
   int nAvg = 1; //number of ADC reads to take for average
   strings[0] = adcReadAvg(strE, nAvg);
   strings[1] = adcReadAvg(strA, nAvg);
@@ -32,7 +35,17 @@ void loop() {
 
   for(int i=0; i<6; i++){ //convert ADC value to MIDI note for each string
     fret = lookupFret(strings[i]);
-    notes[i] = lookupNote(i, fret);
+    newNotes[i] = lookupNote(i, fret);
+  }
+  for(int i = 0; i < 6; i++)
+  {
+    if (newNotes[i] != notes[i])
+    {
+      noteOff(0, notes[i], 100);
+      delay(1);
+      noteOn(0, newNotes[i], 100);
+    }
+    notes[i] = newNotes[i];
   }
 
   //Serial.println(fret);
@@ -77,4 +90,18 @@ int lookupNote(int str, int fret){
   else return 0; //invalid string passed
 
   return note; //if octaves need adjusting, add or subtract 12 to this value per octave shift
+}
+
+void noteOn(byte channel, byte pitch, byte velocity) {
+
+  midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
+
+  MidiUSB.sendMIDI(noteOn);
+}
+
+void noteOff(byte channel, byte pitch, byte velocity) {
+
+  midiEventPacket_t noteoff = {0x08, 0x80 | channel, pitch, velocity};
+
+  MidiUSB.sendMIDI(noteoff);
 }
