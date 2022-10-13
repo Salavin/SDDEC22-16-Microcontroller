@@ -23,6 +23,7 @@ void loop() {
   int frets[6] = {};
   int notes[6] = {};    //MIDI notes associated with each string's current fret value
   int nextNote = 0;
+  int sw = 0;
   int nAvg = 1; //number of ADC reads to take for average
   strings[0] = adcReadAvg(strE, nAvg);
   strings[1] = adcReadAvg(strA, nAvg);
@@ -39,11 +40,15 @@ void loop() {
     notes[i] = lookupNote(i, frets[i]);
   }
 
+  
+
   for(int i=0; i<6;i++){
     Serial.print(frets[i]);
     Serial.print("\t");
   }
   //Serial.print(frets[5]);
+  sw = analogRead(A7);
+  Serial.print(sw);
   Serial.print("\n");
 
   //nextNote = findHighestNote(notes[]);
