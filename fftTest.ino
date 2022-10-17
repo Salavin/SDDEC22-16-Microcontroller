@@ -62,15 +62,15 @@ void loop()
 
   for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
-    if (newNotes[i] != notes[i])
-    {
-      noteOff(0, notes[i] + 50, 100);
-      delay(1);
+    // if (newNotes[i] != notes[i])
+    // {
+    //   noteOff(0, notes[i] + 50, 100);
+    //   delay(1);
       if (newNotes[i] > 0)
       {
         noteOn(0, newNotes[i] + 50, 100);
       }
-    }
+    // }
     notes[i] = newNotes[i];
   }
 
@@ -96,6 +96,11 @@ void loop()
   {  
     strum = analogRead(A7);
   }
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
+  {
+    noteOff(0, notes[i], 100);
+  }
+
   delay(10);
 }
 
