@@ -237,21 +237,20 @@ int lookupNote(int str, int fret){
   return note - 12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
 }
 
-void noteOn(byte channel, byte pitch, byte velocity) {
-
+void noteOn(byte channel, byte pitch, byte velocity)
+{
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
-
   MidiUSB.sendMIDI(noteOn);
 }
 
-void noteOff(byte channel, byte pitch, byte velocity) {
-
+void noteOff(byte channel, byte pitch, byte velocity)
+{
   midiEventPacket_t noteoff = {0x08, 0x80 | channel, pitch, velocity};
-
   MidiUSB.sendMIDI(noteoff);
 }
 
-int findHighestNote(int notes[6]){
+int findHighestNote(int notes[6])
+{
   int highestNote = 0;
   for (int i = 0; i < 6; i++)
   {
