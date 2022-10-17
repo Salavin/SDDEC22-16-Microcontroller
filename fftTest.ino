@@ -54,7 +54,7 @@ void loop()
   Serial.print(strings[5]);
   Serial.print("\t");
 
-  for (int i = BOTTOM_STRING_TO_READ; i<NUM_STRINGS; i++)
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   { //convert ADC value to MIDI note for each string
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);
@@ -74,14 +74,14 @@ void loop()
     notes[i] = newNotes[i];
   }
 
-  for (int i = BOTTOM_STRING_TO_READ; i<NUM_STRINGS; i++)
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
     Serial.print(frets[i]);
     Serial.print("\t");
   }
 
   Serial.print("Notes: ");
-  for (int i = BOTTOM_STRING_TO_READ; i<NUM_STRINGS; i++)
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
     Serial.print(notes[i]);
     Serial.print("\t");
@@ -92,7 +92,7 @@ void loop()
   //nextNote = findHighestNote(notes[]);
 
   // wait for strum button to be released before continuing so only one note is sent per button press
-  while (strum>1000)
+  while (strum > 1000)
   {  
     strum = analogRead(A7);
   }
