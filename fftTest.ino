@@ -17,7 +17,8 @@ const int TOP_STRING_TO_READ = 6;
 const int NUM_STRINGS = 6;
 const int BAUD_RATE = 9600;
 const int ANALOG_READ_RESOLUTION = 12;
-                    
+void findFretAvg(int str);
+           
 int adcVal = 0;  
 int fret = 0;
 int notes[NUM_STRINGS] = {0, 0, 0, 0, 0, 0};    //MIDI notes associated with each string's current fret value
@@ -32,8 +33,12 @@ void loop()
   int strings[NUM_STRINGS] = {};  //E A D G B e
   int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
   int frets[NUM_STRINGS] = {};
-  int nAvg = 1; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+  int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
   int strum = 0;
+
+  //while(1){ //THIS IS JUST FOR FINDING FRET ADC VALS DONT LEAVE IN!
+  //  findFretAvg(strB);
+  //}
 
   //wait for strum (right now its just a button press)
   while (strum < 4000)
@@ -41,7 +46,7 @@ void loop()
     strum = analogRead(A7);
   }
   
-  Serial.println(strum);
+  //Serial.println(strum);
 
   //read string voltages
   strings[0] = adcReadAvg(strE, nAvg);
@@ -100,19 +105,37 @@ void loop()
   {
     noteOff(0, notes[i], 100);
   }
-
   delay(10);
 }
 
-int adcReadAvg(int port, int nAvg)
-{
-  int avgVal = 0;
-  for(int i = 0; i < nAvg; i++)
-  {
-    avgVal += analogRead(port);
+int adcReadAvg(int port, int nAvg){
+  int current = 0;
+  int sum = 0;
+  int max = 0;
+  int min = 99999;
+  float avg = 0;
+  
+  for(int i=0; i<nAvg; i++){
+    current = analogRead(port);
+    //Serial.println(current);
+    sum += current;
+    if(current > max) max = current;
+    if(current < min) min = current;
+    delayMicroseconds(100);
   }
-  avgVal = avgVal/nAvg;
-  return avgVal;
+  avg = sum/nAvg;
+
+  Serial.print("nAvg = ");
+  Serial.print(nAvg);
+  Serial.print("\n Max = ");
+  Serial.print(max);
+  Serial.print("\n Min = ");
+  Serial.print(min);
+  Serial.print("\n Average = ");
+  Serial.print(avg);
+  Serial.print("\n\n");
+    
+  return avg;
 }
 
 int lookupFret(int string, int adcVal)
@@ -262,4 +285,46 @@ int findHighestNote(int notes[6])
     if (highestNote < notes[i]) highestNote = notes[i];    
   }
   return highestNote;
+}
+
+void findFretAvg(int str){
+  int onOff = 0;
+  int sum = 0;
+  int current = 0;
+  int i = 0;
+  float avg = 0;
+  int max = 0;
+  int min = 99999;
+
+  while(onOff<1000){
+    onOff = analogRead(A7);
+  }
+
+  sum = 0;
+  current = 0;
+  i = 0;
+  avg = 0;
+  max = 0;
+  min = 99999;    
+  while(onOff>1000){
+    i++;
+    current = analogRead(str);
+    sum += current;
+    if(current>max) max = current;
+    if(current<min) min = current;
+    onOff = analogRead(A7);    
+    delay(10);
+
+  }  
+  avg = sum/i;
+  Serial.print("i = ");
+  Serial.print(i);
+  Serial.print("\n Max = ");
+  Serial.print(max);
+  Serial.print("\n Min = ");
+  Serial.print(min);
+  Serial.print("\n Average = ");
+  Serial.print(avg);
+  Serial.print("\n\n");
+  
 }
