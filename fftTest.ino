@@ -112,7 +112,8 @@ int adcReadAvg(int port, int nAvg)
 
 int lookupFret(int string, int adcVal)
 {
-  switch (string):
+  switch (string)
+  {
     case 5:
       if(adcVal < 200) return 0;
       else if(adcVal >= 200 && adcVal <= 240) return 1;
@@ -205,6 +206,7 @@ int lookupFret(int string, int adcVal)
       break;
     default:
       return 0;
+  }
 }
 
 int lookupNote(int str, int fret){
