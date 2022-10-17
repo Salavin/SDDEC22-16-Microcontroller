@@ -5,6 +5,8 @@ int lookupFret(int string, int adcVal);
 int lookupNote(int str, int fret);
 int findHighestNote(int notes[6]);
 
+void findFretAvg(int str);
+
 int strE = A0;
 int strA = A1;
 int strD = A2;
@@ -25,15 +27,19 @@ void loop() {
   int strings[6] = {};  //E A D G B e
   int newNotes[6] = {};    //MIDI notes associated with each string's current fret value
   int frets[6] = {};
-  int nAvg = 1; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+  int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
   int strum = 0;
+
+  //while(1){ //THIS IS JUST FOR FINDING FRET ADC VALS DONT LEAVE IN!
+  //  findFretAvg(strB);
+  //}
 
   //wait for strum (right now its just a button press)
   while(strum<4000){
     strum = analogRead(A7);
   }
   
-  Serial.println(strum);
+  //Serial.println(strum);
 
   //read string voltages
   strings[0] = adcReadAvg(strE, nAvg);
@@ -59,7 +65,7 @@ void loop() {
       delay(1);
       if (newNotes[i] > 0)
       {
-        Serial.print("New note at " + newNotes[i] + 50);
+        //Serial.print("New note at " + newNotes[i] + 50);
         noteOn(0, newNotes[i] + 50, 100);
       }
     }
@@ -84,17 +90,42 @@ void loop() {
   while(strum>1000){  
     strum = analogRead(A7);
   }
+  for (int i = 5; i < 6; i++)
+  {
+    noteOff(0, notes[i], 100);
+  }
   delay(10);
   
 }
 
 int adcReadAvg(int port, int nAvg){
-  int avgVal = 0;
+  int current = 0;
+  int sum = 0;
+  int max = 0;
+  int min = 99999;
+  float avg = 0;
+  
   for(int i=0; i<nAvg; i++){
-    avgVal += analogRead(port);
+    current = analogRead(port);
+    //Serial.println(current);
+    sum += current;
+    if(current > max) max = current;
+    if(current < min) min = current;
+    delayMicroseconds(100);
   }
-  avgVal = avgVal/nAvg;
-  return avgVal;
+  avg = sum/nAvg;
+
+  Serial.print("nAvg = ");
+  Serial.print(nAvg);
+  Serial.print("\n Max = ");
+  Serial.print(max);
+  Serial.print("\n Min = ");
+  Serial.print(min);
+  Serial.print("\n Average = ");
+  Serial.print(avg);
+  Serial.print("\n\n");
+    
+  return avg;
 }
 
 int lookupFret(int string, int adcVal){
@@ -112,22 +143,29 @@ int lookupFret(int string, int adcVal){
     else if(adcVal>=2000 && adcVal<=2189) return 10;
     else if(adcVal>=2190 && adcVal<=2300) return 11;
     else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else return 0;    
   }
 
   if(string==4){ //B
-    if(adcVal < 200) return 0;
+    if(adcVal < 50) return 0;
     else if(adcVal>=200 && adcVal<=240) return 1;
     else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else if(adcVal>=300 && adcVal<=550) return 3;
+    else if(adcVal>=551 && adcVal<=900) return 4;
+    else if(adcVal>=901 && adcVal<=1150) return 5;
+    else if(adcVal>=1151 && adcVal<=1350) return 6;
+    else if(adcVal>=1351 && adcVal<=1600) return 7;
+    else if(adcVal>=1601 && adcVal<=1850) return 8;
+    else if(adcVal>=1851 && adcVal<=2100) return 9;
+    else if(adcVal>=2101 && adcVal<=2270) return 10;
+    else if(adcVal>=2271 && adcVal<=2350) return 11;
+    else if(adcVal>=2351 && adcVal<=2550) return 12;
+    //else if(adcVal>=2351 && adcVal<=2550) return 13;
+    //else if(adcVal>=2351 && adcVal<=2550) return 14;
+    //else if(adcVal>=2351 && adcVal<=2550) return 15;
+    //else if(adcVal>=2351 && adcVal<=2550) return 16;
+    //else if(adcVal>=2351 && adcVal<=2550) return 17;
+    else return 0;
   }
 
   if(string==3){ //G
@@ -144,6 +182,7 @@ int lookupFret(int string, int adcVal){
     else if(adcVal>=2000 && adcVal<=2189) return 10;
     else if(adcVal>=2190 && adcVal<=2300) return 11;
     else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else return 0;
   }
 
   if(string==2){ //D
@@ -160,6 +199,7 @@ int lookupFret(int string, int adcVal){
     else if(adcVal>=2000 && adcVal<=2189) return 10;
     else if(adcVal>=2190 && adcVal<=2300) return 11;
     else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else return 0;
   }
 
   if(string==1){ //A
@@ -176,6 +216,7 @@ int lookupFret(int string, int adcVal){
     else if(adcVal>=2000 && adcVal<=2189) return 10;
     else if(adcVal>=2190 && adcVal<=2300) return 11;
     else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else return 0;
   }
 
   if(string==0){ //low E
@@ -192,6 +233,7 @@ int lookupFret(int string, int adcVal){
     else if(adcVal>=2000 && adcVal<=2189) return 10;
     else if(adcVal>=2190 && adcVal<=2300) return 11;
     else if(adcVal>=2301 && adcVal<=2550) return 12;
+    else return 0;
   }
 
   return 0;
@@ -230,4 +272,46 @@ int findHighestNote(int notes[6]){
     if(highestNote<notes[i]) highestNote = notes[i];    
   }
   return highestNote;
+}
+
+void findFretAvg(int str){
+  int onOff = 0;
+  int sum = 0;
+  int current = 0;
+  int i = 0;
+  float avg = 0;
+  int max = 0;
+  int min = 99999;
+
+  while(onOff<1000){
+    onOff = analogRead(A7);
+  }
+
+  sum = 0;
+  current = 0;
+  i = 0;
+  avg = 0;
+  max = 0;
+  min = 99999;    
+  while(onOff>1000){
+    i++;
+    current = analogRead(str);
+    sum += current;
+    if(current>max) max = current;
+    if(current<min) min = current;
+    onOff = analogRead(A7);    
+    delay(10);
+
+  }  
+  avg = sum/i;
+  Serial.print("i = ");
+  Serial.print(i);
+  Serial.print("\n Max = ");
+  Serial.print(max);
+  Serial.print("\n Min = ");
+  Serial.print(min);
+  Serial.print("\n Average = ");
+  Serial.print(avg);
+  Serial.print("\n\n");
+  
 }
