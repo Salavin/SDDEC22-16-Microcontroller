@@ -13,6 +13,9 @@ int strD = A2;
 int strG = A3;
 int strB = A4;
 int strEe = A5; 
+
+//Midi value offset for each string
+int offsets[6] = {16, 21, 26, 31, 35, 40};
                     
 int adcVal = 0;  
 int fret = 0;
@@ -95,7 +98,31 @@ void loop() {
     noteOff(0, notes[i], 100);
   }
   delay(10);
+
+  //Detect Application Communication
+  receiveAndSetConfig();
   
+}
+
+void receiveAndSetConfig(){
+  int SOM = 60;
+  int EOM = 50;
+  midiEventPacket_t general = MidiUSB.read();
+  
+  if(general.byte2 == SOM)
+  {
+    int iter = 0; //offset list iterator
+    midiEventPacket_t data;
+    while(true)
+    {        
+      midiEventPacket_t data = MidiUSB.read();
+      if(data.byte2 == EOM)  break;
+      else if(data.byte2 != 0)
+      {
+        offset[iter++] = data.byte2;
+      }
+    }
+  }
 }
 
 int adcReadAvg(int port, int nAvg){
@@ -241,12 +268,12 @@ int lookupFret(int string, int adcVal){
 
 int lookupNote(int str, int fret){
   int note = 0;
-  if (str==0) note = fret+16;       //E
-  else if(str==1) note = fret + 21; //A
-  else if(str==2) note = fret + 26; //D
-  else if(str==3) note = fret + 31; //G
-  else if(str==4) note = fret + 35; //B
-  else if(str==5) note = fret + 40; //e
+  if (str==0) note = fret     + offset[0]; //E
+  else if(str==1) note = fret + offset[1]; //A
+  else if(str==2) note = fret + offset[2]; //D
+  else if(str==3) note = fret + offset[3]; //G
+  else if(str==4) note = fret + offset[4]; //B
+  else if(str==5) note = fret + offset[5]; //e
   else return 0; //invalid string passed
 
   return note-12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
