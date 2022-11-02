@@ -11,8 +11,9 @@ const int strD = A2;
 const int strG = A3;
 const int strB = A4;
 const int strEe = A5; 
+const int stringVals = {strE, strA, strD, strB, strEe};
 
-const int BOTTOM_STRING_TO_READ = 5;
+const int BOTTOM_STRING_TO_READ = 4;
 const int TOP_STRING_TO_READ = 6;
 const int NUM_STRINGS = 6;
 const int BAUD_RATE = 9600;
@@ -22,19 +23,20 @@ void findFretAvg(int str);
 int adcVal = 0;  
 int fret = 0;
 int notes[NUM_STRINGS] = {0, 0, 0, 0, 0, 0};    //MIDI notes associated with each string's current fret value
+int strings[NUM_STRINGS] = {};  //E A D G B e
+int frets[NUM_STRINGS] = {};
+int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+int strum = 0;
 
-void setup() {
+void setup()
+{
   Serial.begin(BAUD_RATE);       
   analogReadResolution(ANALOG_READ_RESOLUTION); //12-bit mode
 }
 
 void loop()
 {
-  int strings[NUM_STRINGS] = {};  //E A D G B e
   int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
-  int frets[NUM_STRINGS] = {};
-  int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
-  int strum = 0;
 
   //while(1){ //THIS IS JUST FOR FINDING FRET ADC VALS DONT LEAVE IN!
   //  findFretAvg(strB);
@@ -60,27 +62,17 @@ void loop()
   Serial.print("\t");
 
   for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
-  { //convert ADC value to MIDI note for each string
+  {
+    strings[i] = adcReadAvg(stringVals[i], nAvg);
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);
-  }
 
-  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
-  {
-    // if (newNotes[i] != notes[i])
-    // {
-    //   noteOff(0, notes[i] + 50, 100);
-    //   delay(1);
-      if (newNotes[i] > 0)
-      {
-        noteOn(0, newNotes[i] + 50, 100);
-      }
-    // }
+    if (newNotes[i] > 0)
+    {
+      noteOn(0, newNotes[i] + 50, 100);
+      delay(1);
+    }
     notes[i] = newNotes[i];
-  }
-
-  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
-  {
     Serial.print(frets[i]);
     Serial.print("\t");
   }
@@ -105,7 +97,7 @@ void loop()
   {
     noteOff(0, notes[i], 100);
   }
-  delay(10);
+  delay(1);
 }
 
 int adcReadAvg(int port, int nAvg){
@@ -125,15 +117,15 @@ int adcReadAvg(int port, int nAvg){
   }
   avg = sum/nAvg;
 
-  Serial.print("nAvg = ");
-  Serial.print(nAvg);
-  Serial.print("\n Max = ");
-  Serial.print(max);
-  Serial.print("\n Min = ");
-  Serial.print(min);
-  Serial.print("\n Average = ");
-  Serial.print(avg);
-  Serial.print("\n\n");
+  // Serial.print("nAvg = ");
+  // Serial.print(nAvg);
+  // Serial.print("\n Max = ");
+  // Serial.print(max);
+  // Serial.print("\n Min = ");
+  // Serial.print(min);
+  // Serial.print("\n Average = ");
+  // Serial.print(avg);
+  // Serial.print("\n\n");
     
   return avg;
 }
