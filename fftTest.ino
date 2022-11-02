@@ -27,19 +27,14 @@ void loop() {
   int strings[6] = {};  //E A D G B e
   int newNotes[6] = {};    //MIDI notes associated with each string's current fret value
   int frets[6] = {};
-  int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+  int nAvg = 50; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
   int strum = 0;
 
-  //while(1){ //THIS IS JUST FOR FINDING FRET ADC VALS DONT LEAVE IN!
-  //  findFretAvg(strB);
-  //}
 
   //wait for strum (right now its just a button press)
   while(strum<4000){
     strum = analogRead(A7);
   }
-  
-  //Serial.println(strum);
 
   //read string voltages
   strings[0] = adcReadAvg(strE, nAvg);
@@ -49,10 +44,21 @@ void loop() {
   strings[4] = adcReadAvg(strB, nAvg);
   strings[5] = adcReadAvg(strEe, nAvg);
 
+//THIS PRINTS THE AVG ADC VAL FOR EACH STRING FOR THE PURPOSE OF BUILING LOOKUP TABLES
+  Serial.print(strings[0]);
+  Serial.print("\t");
+  Serial.print(strings[1]);
+  Serial.print("\t");
+  Serial.print(strings[2]);
+  Serial.print("\t");
+  Serial.print(strings[3]);
+  Serial.print("\t");
+  Serial.print(strings[4]);
+  Serial.print("\t");
   Serial.print(strings[5]);
   Serial.print("\t");
 
-  for(int i=5; i<6; i++){ //convert ADC value to MIDI note for each string
+  for(int i=0; i<6; i++){ //convert ADC value to MIDI note for each string
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);
   }
@@ -71,17 +77,19 @@ void loop() {
     }
     notes[i] = newNotes[i];
   }
-
-  for(int i=5; i<6;i++){
+/*
+  for(int i=0; i<6;i++){
     Serial.print(frets[i]);
     Serial.print("\t");
   }
-  Serial.print("Notes");
-  for(int i=5; i<6;i++){
+  //Serial.print("Notes");
+  
+  for(int i=0; i<6;i++){
     Serial.print(notes[i]);
     Serial.print("\t");
   }
-  //Serial.print(frets[5]);
+  */
+
   Serial.print("\n");
 
   //nextNote = findHighestNote(notes[]);
@@ -89,6 +97,7 @@ void loop() {
   // wait for strum button to be released before continuing so only one note is sent per button press
   while(strum>1000){  
     strum = analogRead(A7);
+    //Serial.println(strum);
   }
   for (int i = 5; i < 6; i++)
   {
@@ -114,7 +123,7 @@ int adcReadAvg(int port, int nAvg){
     delayMicroseconds(100);
   }
   avg = sum/nAvg;
-
+/*
   Serial.print("nAvg = ");
   Serial.print(nAvg);
   Serial.print("\n Max = ");
@@ -124,119 +133,29 @@ int adcReadAvg(int port, int nAvg){
   Serial.print("\n Average = ");
   Serial.print(avg);
   Serial.print("\n\n");
-    
+    */
   return avg;
 }
 
-int lookupFret(int string, int adcVal){
-  if(string==5){ //high e
+int lookupFret(int string, int adcVal) 
+{
     if(adcVal < 200) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
-    else return 0;    
-  }
-
-  if(string==4){ //B
-    if(adcVal < 50) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=300 && adcVal<=550) return 3;
-    else if(adcVal>=551 && adcVal<=900) return 4;
-    else if(adcVal>=901 && adcVal<=1150) return 5;
-    else if(adcVal>=1151 && adcVal<=1350) return 6;
-    else if(adcVal>=1351 && adcVal<=1600) return 7;
-    else if(adcVal>=1601 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=2100) return 9;
-    else if(adcVal>=2101 && adcVal<=2270) return 10;
-    else if(adcVal>=2271 && adcVal<=2350) return 11;
-    else if(adcVal>=2351 && adcVal<=2550) return 12;
-    //else if(adcVal>=2351 && adcVal<=2550) return 13;
-    //else if(adcVal>=2351 && adcVal<=2550) return 14;
-    //else if(adcVal>=2351 && adcVal<=2550) return 15;
-    //else if(adcVal>=2351 && adcVal<=2550) return 16;
-    //else if(adcVal>=2351 && adcVal<=2550) return 17;
+    else if(adcVal>=200 && adcVal<=274) return 1;
+    else if(adcVal>=275 && adcVal<=299) return 2;
+    else if(adcVal>=300 && adcVal<=599) return 3;
+    else if(adcVal>=800 && adcVal<=899) return 4;
+    else if(adcVal>=1100 && adcVal<=1199) return 5;
+    else if(adcVal>=1300 && adcVal<=1499) return 6;
+    else if(adcVal>=1600 && adcVal<=1799) return 7;
+    else if(adcVal>=1800 && adcVal<=2199) return 8;
+    else if(adcVal>=2300 && adcVal<=2399) return 9;
+    else if(adcVal>=2400 && adcVal<=2699) return 10;
+    else if(adcVal>=2600 && adcVal<=2924) return 11;
+    else if(adcVal>=2925 && adcVal<=3214) return 12;
+    else if(adcVal>=3215 && adcVal<=3399) return 13;
+    else if(adcVal>=3500 && adcVal<=3799) return 14;
+    else if(adcVal>=3800) return 15;
     else return 0;
-  }
-
-  if(string==3){ //G
-    if(adcVal < 200) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
-    else return 0;
-  }
-
-  if(string==2){ //D
-    if(adcVal < 200) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
-    else return 0;
-  }
-
-  if(string==1){ //A
-    if(adcVal < 200) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
-    else return 0;
-  }
-
-  if(string==0){ //low E
-    if(adcVal < 200) return 0;
-    else if(adcVal>=200 && adcVal<=240) return 1;
-    else if(adcVal>=241 && adcVal<=260) return 2;
-    else if(adcVal>=260 && adcVal<=400) return 3;
-    else if(adcVal>=400 && adcVal<=850) return 4;
-    else if(adcVal>=851 && adcVal<=1200) return 5;
-    else if(adcVal>=1201 && adcVal<=1399) return 6;
-    else if(adcVal>=1400 && adcVal<=1550) return 7;
-    else if(adcVal>=1551 && adcVal<=1850) return 8;
-    else if(adcVal>=1851 && adcVal<=1999) return 9;
-    else if(adcVal>=2000 && adcVal<=2189) return 10;
-    else if(adcVal>=2190 && adcVal<=2300) return 11;
-    else if(adcVal>=2301 && adcVal<=2550) return 12;
-    else return 0;
-  }
-
-  return 0;
 }
 
 int lookupNote(int str, int fret){
