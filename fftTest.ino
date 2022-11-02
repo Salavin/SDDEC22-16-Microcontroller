@@ -5,34 +5,42 @@ int lookupFret(int string, int adcVal);
 int lookupNote(int str, int fret);
 int findHighestNote(int notes[6]);
 
-void findFretAvg(int str);
+const int strE = A0;
+const int strA = A1;
+const int strD = A2;
+const int strG = A3;
+const int strB = A4;
+const int strEe = A5; 
+const int stringVals = {strE, strA, strD, strB, strEe};
 
-int strE = A0;
-int strA = A1;
-int strD = A2;
-int strG = A3;
-int strB = A4;
-int strEe = A5; 
-                    
+const int BOTTOM_STRING_TO_READ = 4;
+const int TOP_STRING_TO_READ = 6;
+const int NUM_STRINGS = 6;
+const int BAUD_RATE = 9600;
+const int ANALOG_READ_RESOLUTION = 12;
+void findFretAvg(int str);
+           
 int adcVal = 0;  
 int fret = 0;
-int notes[6] = {0, 0, 0, 0, 0, 0};    //MIDI notes associated with each string's current fret value
+int notes[NUM_STRINGS] = {0, 0, 0, 0, 0, 0};    //MIDI notes associated with each string's current fret value
+int strings[NUM_STRINGS] = {};  //E A D G B e
+int frets[NUM_STRINGS] = {};
+int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+int strum = 0;
 
-void setup() {
-  Serial.begin(9600);       
-  analogReadResolution(12); //12-bit mode
+void setup()
+{
+  Serial.begin(BAUD_RATE);       
+  analogReadResolution(ANALOG_READ_RESOLUTION); //12-bit mode
 }
 
-void loop() {
-  int strings[6] = {};  //E A D G B e
-  int newNotes[6] = {};    //MIDI notes associated with each string's current fret value
-  int frets[6] = {};
-  int nAvg = 50; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
-  int strum = 0;
-
+void loop()
+{
+  int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
 
   //wait for strum (right now its just a button press)
-  while(strum<4000){
+  while (strum < 4000)
+  {
     strum = analogRead(A7);
   }
 
@@ -58,53 +66,44 @@ void loop() {
   Serial.print(strings[5]);
   Serial.print("\t");
 
-  for(int i=0; i<6; i++){ //convert ADC value to MIDI note for each string
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
+  {
+    strings[i] = adcReadAvg(stringVals[i], nAvg);
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);
-  }
 
-  for(int i = 5; i < 6; i++)
-  {
-    if (newNotes[i] != notes[i])
+    if (newNotes[i] > 0)
     {
-      noteOff(0, notes[i] + 50, 100);
+      noteOn(0, newNotes[i] + 50, 100);
       delay(1);
-      if (newNotes[i] > 0)
-      {
-        //Serial.print("New note at " + newNotes[i] + 50);
-        noteOn(0, newNotes[i] + 50, 100);
-      }
     }
     notes[i] = newNotes[i];
-  }
-/*
-  for(int i=0; i<6;i++){
     Serial.print(frets[i]);
     Serial.print("\t");
   }
-  //Serial.print("Notes");
-  
-  for(int i=0; i<6;i++){
+
+  Serial.print("Notes: ");
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
+  {
     Serial.print(notes[i]);
     Serial.print("\t");
   }
-  */
 
   Serial.print("\n");
 
   //nextNote = findHighestNote(notes[]);
 
   // wait for strum button to be released before continuing so only one note is sent per button press
-  while(strum>1000){  
+  while (strum > 1000)
+  {  
     strum = analogRead(A7);
     //Serial.println(strum);
   }
-  for (int i = 5; i < 6; i++)
+  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
     noteOff(0, notes[i], 100);
   }
-  delay(10);
-  
+  delay(1);
 }
 
 int adcReadAvg(int port, int nAvg){
@@ -160,35 +159,50 @@ int lookupFret(int string, int adcVal)
 
 int lookupNote(int str, int fret){
   int note = 0;
-  if (str==0) note = fret+16;       //E
-  else if(str==1) note = fret + 21; //A
-  else if(str==2) note = fret + 26; //D
-  else if(str==3) note = fret + 31; //G
-  else if(str==4) note = fret + 35; //B
-  else if(str==5) note = fret + 40; //e
-  else return 0; //invalid string passed
-
-  return note-12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
+  switch (str)
+  {
+    case 0:
+      note = fret + 16;  // E
+      break;
+    case 1: 
+      note = fret + 21;
+      break;
+    case 2:
+      note = fret + 26;  // D
+      break;
+    case 3:
+      note = fret + 31;  // G
+      break;
+    case 4:
+      note = fret + 35;  // B
+      break;
+    case 5:
+      note = fret + 40;  // e
+      break;
+    default:
+      return 0;
+  }
+  return note - 12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
 }
 
-void noteOn(byte channel, byte pitch, byte velocity) {
-
+void noteOn(byte channel, byte pitch, byte velocity)
+{
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
-
   MidiUSB.sendMIDI(noteOn);
 }
 
-void noteOff(byte channel, byte pitch, byte velocity) {
-
+void noteOff(byte channel, byte pitch, byte velocity)
+{
   midiEventPacket_t noteoff = {0x08, 0x80 | channel, pitch, velocity};
-
   MidiUSB.sendMIDI(noteoff);
 }
 
-int findHighestNote(int notes[6]){
+int findHighestNote(int notes[6])
+{
   int highestNote = 0;
-  for(int i=0; i<6; i++){
-    if(highestNote<notes[i]) highestNote = notes[i];    
+  for (int i = 0; i < 6; i++)
+  {
+    if (highestNote < notes[i]) highestNote = notes[i];    
   }
   return highestNote;
 }
