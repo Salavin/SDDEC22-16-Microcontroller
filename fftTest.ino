@@ -101,7 +101,32 @@ void loop()
   {
     noteOff(0, notes[i], 100);
   }
+  
+  //Check for new Midi config and set config 
+  receiveAndSetConfig();
+
   delay(1);
+}
+
+void receiveAndSetConfig(){
+  int SOM = 60;
+  int EOM = 50;
+  midiEventPacket_t general = MidiUSB.read();
+  
+  if(general.byte2 == SOM)
+  {
+    int iter = 0; //offset list iterator
+    midiEventPacket_t data;
+    while(true)
+    {        
+      midiEventPacket_t data = MidiUSB.read();
+      if(data.byte2 == EOM)  break;
+      else if(data.byte2 != 0)
+      {
+        offset[iter++] = data.byte2;
+      }
+    }
+  }
 }
 
 int adcReadAvg(int port, int nAvg){
