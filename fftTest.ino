@@ -60,6 +60,7 @@ void setup()
 void loop()
 {
   int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
+  bool noteChanged[6] = {false, false, false, false, false, false};
 
   //wait for strum
   while (strum < attackThresh)
@@ -72,9 +73,8 @@ void loop()
     strings[i] = adcReadAvg(stringVals[i], nAvg);
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);    
-    noteChanged[6] = {false, false, false, false, false, false};
 
-    if (newNotes[i] != notes[i])
+    if (newNotes[i] != lookupNote(i, 0))
     {
       noteChanged[i] = true;
       noteOn(0, newNotes[i], 100);
