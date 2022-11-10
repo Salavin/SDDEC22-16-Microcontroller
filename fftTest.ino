@@ -1,7 +1,7 @@
 #include "MIDIUSB.h"
 #include <math.h>
 
-void waitForStrumDecay(int nStrAvg);
+void waitForStrumDecay(int nStrAvgMov);
 int adcReadAvg(int port, int nAvg);
 int lookupFret(int string, int adcVal);
 int lookupNote(int str, int fret);
@@ -22,6 +22,7 @@ const int TOP_STRING_TO_READ = 6;
 const int NUM_STRINGS = 6;
 const int BAUD_RATE = 9600;
 const int ANALOG_READ_RESOLUTION = 12;
+const int nStrAvg = 1000;
            
 int adcVal = 0;  
 int fret = 0;
@@ -31,9 +32,8 @@ int frets[NUM_STRINGS] = {};
 int nAvg = 100; //number of ADC reads to take for average when reading fret values
 int strum = 0;
 int strumAvg = 0;
-int nStrAvg = 250;
 int zeroPoint = 2035;   // Reassigned in setup(), used in waitForStrumDecay()
-int decayThresh = 2050; // Reassigned in setup(), used in waitForStrumDecay()
+int decayThresh = 2100; // Reassigned in setup(), used in waitForStrumDecay()
 int attackThresh = 2100; //Reassigned in setup(), used in loop() to determine when a string has been plucked
 
 int offset[6] = {16, 21, 26, 31, 35, 40};
@@ -53,8 +53,8 @@ void setup()
     zeroPoint = sum/i;
     i++;
   }
-  decayThresh = zeroPoint + 12;
-  attackThresh = zeroPoint + 65;
+  decayThresh = zeroPoint + 10;
+  attackThresh = zeroPoint + 150;
 }
 
 void loop()
@@ -62,7 +62,7 @@ void loop()
   int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
 
   //wait for strum
-  while (strum < 2100)
+  while (strum < attackThresh)
   {
     strum = analogRead(A7);
   }
@@ -119,26 +119,37 @@ void loop()
   End Main Loop                                    
 ****************************************************/
 
-void waitForStrumDecay(int nStrAvg){
+void waitForStrumDecay(int nStrAvgMov){
   int strAvg = 0;
   int rms = 0;
   int current = 0;
   int sum = 0;
   int i = 1;
+  int j = 0;
 
-  while(strAvg > decayThresh || i < nStrAvg){
+
+  int sum1 = 0;  
+  int sampleSize = 10000;
+  while(1){
     current = analogRead(A7);
-    if(current < zeroPoint){ //rectify around "0" point of 2055
+    if(current < zeroPoint){ //rectify around "zero" point of ADC
       current = zeroPoint - current;
       current += zeroPoint;
     }
+    if ((i % sampleSize) == 0){
+      strAvg = sum1/sampleSize;
+      sum1 = 0;
+    }
+    
+    sum1 += current; 
 
-    sum += current;
-    strAvg = sum/i;  
-    i++;
+    if ((i % sampleSize) == 0) {
+      if (strAvg < decayThresh) break;
+    }  
+
+    i++;  
   }
 }
-
 
 
 void receiveAndSetConfig(){
