@@ -36,6 +36,8 @@ int zeroPoint = 2035;   // Reassigned in setup(), used in waitForStrumDecay()
 int decayThresh = 2050; // Reassigned in setup(), used in waitForStrumDecay()
 int attackThresh = 2100; //Reassigned in setup(), used in loop() to determine when a string has been plucked
 
+int offset[6] = {16, 21, 26, 31, 35, 40};
+
 void setup()
 {
   Serial.begin(BAUD_RATE);       
@@ -69,26 +71,26 @@ void loop()
   {
     strings[i] = adcReadAvg(stringVals[i], nAvg);
     frets[i] = lookupFret(i, strings[i]);
-    newNotes[i] = lookupNote(i, frets[i]);
+    newNotes[i] = lookupNote(i, frets[i]);    
 
     if (newNotes[i] > 0)
     {
-      noteOn(0, newNotes[i] + 50, 100);
+      noteOn(0, newNotes[i], 100);
+      notes[i] = newNotes[i];
       delay(1);
     }
-    notes[i] = newNotes[i];
     Serial.print(frets[i]);
     Serial.print("\t");
   }
 
-  Serial.print("Notes: ");
-  for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
-  {
-    Serial.print(notes[i]);
-    Serial.print("\t");
-  }
-  Serial.print("\n");
-  Serial.println(strum);
+  // Serial.print("Notes: ");
+  // for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
+  // {
+  //   Serial.print(notes[i]);
+  //   Serial.print("\t");
+  // }
+  // Serial.print("\n");
+  // Serial.println(strum);
 
   //nextNote = findHighestNote(notes[]);
 
@@ -205,27 +207,27 @@ int lookupNote (int str, int fret)
   switch (str)
   {
     case 0:
-      note = fret + 16;  // E
+      note = fret + offset[0];  // E
       break;
     case 1: 
-      note = fret + 21;
+      note = fret + offset[0];
       break;
     case 2:
-      note = fret + 26;  // D
+      note = fret + offset[0];  // D
       break;
     case 3:
-      note = fret + 31;  // G
+      note = fret + offset[0];  // G
       break;
     case 4:
-      note = fret + 35;  // B
+      note = fret + offset[0];  // B
       break;
     case 5:
-      note = fret + 40;  // e
+      note = fret + offset[0];  // e
       break;
     default:
       return 0;
   }
-  return note - 12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
+  return note + 36; //if octaves need adjusting, add or subtract 12 to this value per octave shift
 }
 
 
