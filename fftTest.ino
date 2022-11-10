@@ -1,10 +1,13 @@
 #include "MIDIUSB.h"
+#include <math.h>
 
+void waitForStrumDecay(int nStrAvg);
 int adcReadAvg(int port, int nAvg);
 int lookupFret(int string, int adcVal);
 int lookupNote(int str, int fret);
 int findHighestNote(int notes[6]);
 void findFretAvg(int str);
+
 
 const int strE = A0;
 const int strA = A1;
@@ -25,46 +28,42 @@ int fret = 0;
 int notes[NUM_STRINGS] = {0, 0, 0, 0, 0, 0};    //MIDI notes associated with each string's current fret value
 int strings[NUM_STRINGS] = {};  //E A D G B e
 int frets[NUM_STRINGS] = {};
-int nAvg = 100; //number of ADC reads to take for average (leave at 1 for now, avg function broke)
+int nAvg = 100; //number of ADC reads to take for average when reading fret values
 int strum = 0;
+int strumAvg = 0;
+int nStrAvg = 250;
+int zeroPoint = 2035;   // Reassigned in setup(), used in waitForStrumDecay()
+int decayThresh = 2050; // Reassigned in setup(), used in waitForStrumDecay()
+int attackThresh = 2100; //Reassigned in setup(), used in loop() to determine when a string has been plucked
 
 void setup()
 {
   Serial.begin(BAUD_RATE);       
   analogReadResolution(ANALOG_READ_RESOLUTION); //12-bit mode
+
+  //These next few lines determines what the "zero point" will be for the ADC input used for strum detection
+  //Make sure guitar is silenced when powering on microcontroller
+  int i = 0;
+  int sum = 0;
+  delay(100);
+  while(i<100000){
+    sum += analogRead(A7);
+    zeroPoint = sum/i;
+    i++;
+  }
+  decayThresh = zeroPoint + 12;
+  attackThresh = zeroPoint + 65;
 }
 
 void loop()
 {
   int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
 
-  //wait for strum (right now its just a button press)
-  while (strum < 4000)
+  //wait for strum
+  while (strum < 2100)
   {
     strum = analogRead(A7);
   }
-
-  //read string voltages
-  // strings[0] = adcReadAvg(strE, nAvg);
-  // strings[1] = adcReadAvg(strA, nAvg);
-  // strings[2] = adcReadAvg(strD, nAvg);
-  // strings[3] = adcReadAvg(strG, nAvg);
-  // strings[4] = adcReadAvg(strB, nAvg);
-  // strings[5] = adcReadAvg(strEe, nAvg);
-
-//THIS PRINTS THE AVG ADC VAL FOR EACH STRING FOR THE PURPOSE OF BUILING LOOKUP TABLES
-  // Serial.print(strings[0]);
-  // Serial.print("\t");
-  // Serial.print(strings[1]);
-  // Serial.print("\t");
-  // Serial.print(strings[2]);
-  // Serial.print("\t");
-  // Serial.print(strings[3]);
-  // Serial.print("\t");
-  // Serial.print(strings[4]);
-  // Serial.print("\t");
-  // Serial.print(strings[5]);
-  // Serial.print("\t");
 
   for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
@@ -89,20 +88,48 @@ void loop()
     Serial.print("\t");
   }
   Serial.print("\n");
+  Serial.println(strum);
 
   //nextNote = findHighestNote(notes[]);
 
   // wait for strum button to be released before continuing so only one note is sent per button press
-  while (strum > 1000)
-  {  
-    strum = analogRead(A7);
-  }
+  waitForStrumDecay(nStrAvg);
+  strum = 0;
+  
   for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
     noteOff(0, notes[i], 100);
   }
   delay(1);
+  Serial.println("off");
 }
+
+
+/***************************************************
+  End Main Loop                                    
+****************************************************/
+
+void waitForStrumDecay(int nStrAvg){
+  int strAvg = 0;
+  int rms = 0;
+  int current = 0;
+  int sum = 0;
+  int i = 1;
+
+  while(strAvg > decayThresh || i < nStrAvg){
+    current = analogRead(A7);
+    if(current < zeroPoint){ //rectify around "0" point of 2055
+      current = zeroPoint - current;
+      current += zeroPoint;
+    }
+
+    sum += current;
+    strAvg = sum/i;  
+    i++;
+  }
+}
+
+
 
 int adcReadAvg(int port, int nAvg){
   int current = 0;
@@ -114,26 +141,16 @@ int adcReadAvg(int port, int nAvg){
   for (int i = 0; i < nAvg; i++)
   {
     current = analogRead(port);
-    //Serial.println(current);
     sum += current;
     if (current > max) max = current;
     if (current < min) min = current;
     delayMicroseconds(100);
   }
   avg = sum / nAvg;
-/*
-  Serial.print("nAvg = ");
-  Serial.print(nAvg);
-  Serial.print("\n Max = ");
-  Serial.print(max);
-  Serial.print("\n Min = ");
-  Serial.print(min);
-  Serial.print("\n Average = ");
-  Serial.print(avg);
-  Serial.print("\n\n");
-    */
   return avg;
 }
+
+
 
 int lookupFret(int string, int adcVal) 
 {
@@ -155,6 +172,8 @@ int lookupFret(int string, int adcVal)
     else if (adcVal >= 3800) return 15;
     else return 0;
 }
+
+
 
 int lookupNote (int str, int fret)
 {
@@ -185,17 +204,23 @@ int lookupNote (int str, int fret)
   return note - 12; //if octaves need adjusting, add or subtract 12 to this value per octave shift
 }
 
+
+
 void noteOn(byte channel, byte pitch, byte velocity)
 {
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOn);
 }
 
+
+
 void noteOff(byte channel, byte pitch, byte velocity)
 {
   midiEventPacket_t noteoff = {0x08, 0x80 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteoff);
 }
+
+
 
 int findHighestNote(int notes[6])
 {
@@ -206,6 +231,8 @@ int findHighestNote(int notes[6])
   }
   return highestNote;
 }
+
+
 
 void findFretAvg(int str){
   int onOff = 0;
