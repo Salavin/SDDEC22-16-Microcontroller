@@ -72,9 +72,11 @@ void loop()
     strings[i] = adcReadAvg(stringVals[i], nAvg);
     frets[i] = lookupFret(i, strings[i]);
     newNotes[i] = lookupNote(i, frets[i]);    
+    noteChanged[6] = {false, false, false, false, false, false};
 
-    if (newNotes[i] > 0)
+    if (newNotes[i] != notes[i])
     {
+      noteChanged[i] = true;
       noteOn(0, newNotes[i], 100);
       notes[i] = newNotes[i];
       delay(1);
@@ -100,7 +102,10 @@ void loop()
   
   for (int i = BOTTOM_STRING_TO_READ; i < NUM_STRINGS; i++)
   {
-    noteOff(0, notes[i], 100);
+    if (noteChanged[i])
+    {
+      noteOff(0, notes[i], 100);
+    }
   }
   
   //Check for new Midi config and set config 
