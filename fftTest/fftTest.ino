@@ -1,3 +1,4 @@
+#include <arduinoFFT.h>
 #include "MIDIUSB.h"
 #include <math.h>
 
@@ -63,6 +64,12 @@ void loop()
 {
   maxFret = 0;        //resets for each loop - used for "currentNote"
   currentString = 0;  //resets for each loop - used for "currentNote"
+  int newNotes[NUM_STRINGS] = {};    //MIDI notes associated with each string's current fret value
+  bool noteChanged[6] = {false, false, false, false, false, false};
+  bool isOpen = false;
+  int numSamples = 1024;
+  float samples[numSamples];
+  float samImg[numSamples];
 
   //wait for strum
   while (strum < attackThresh)
